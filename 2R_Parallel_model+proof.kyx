@@ -1,0 +1,69 @@
+﻿/* Exported from KeYmaera X v4.9.3 */
+
+Theorem "Parallel Control"
+
+/* Parallel Design wherein both the links can move simultaneously, hence, we allow for a:= 0 so that the
+link that has reached its destination can wait for the other link */
+
+Functions
+  Real link1, link2; /* Lengths of link 1 and 2 acting as the radial bound for end-points of the links */ 
+  Real T; 
+  Real A; /* Acceleration choice */
+  Real B; /* Decceleration choice */
+  Real xtarget, ytarget; /* X-Y position of the target */
+  Real limTheta1, limTheta2; /* Angular limits to reach the target. This is derived from the target positions 
+                            by applying arctan to tantheta1 & arccosine to costheta2 */
+  Real costheta2; /* To be assigned by computing inverse kinematics for 2 link robot */ 
+  Real sintheta2; 
+  Real tantheta2;
+End.
+
+ProgramVariables
+  Real t; 
+  Real x1, x2; /* x1 = X-position for the end point of link1 or the joint location between link1 and link2. 
+                x2 = Relative X-position of the end point of link2 with respect to x1 (of link1) */ 
+  Real y1, y2; /* Similar description as for x1, x2 but for the vertical position */
+  Real theta1, theta2; /* Angular position for link1 is theta1 and for link2 is theta2 */
+  Real w1, w2; /* Angular velocity for link1 is w1 and for link2 is w2 */
+  Real a1, a2; /* Angular acceleration for Link1 is a1 and link2 is a2 */
+  
+End.
+
+
+Problem
+  (
+    /*Generalized initial conditions */
+    link1 >0 & link2 >0 & limTheta1 > 0 & limTheta2>0 & T> 0 & T > 2*(-theta1 + limTheta1)/A & T > 2*(-theta2 + limTheta2)/A &
+    /* Note that we assume the angular positions to be general for the purpose of a stronger proof 
+       in real world applications the values limTheta1 and limTheta2 can be found by the target positions as given below:
+    
+    xtarget^2 + ytarget^2 <= (link1 + link2)^2 & costheta2 = (xtarget^2 + ytarget^2 - link1^2 - link2^2)/(2*link1*link2) & 
+    sintheta2^2 = 1 - costheta2^2 & limTheta2 = 3.14/2 - (costheta2 + costheta2^3/6 + (3/40)*costheta2^5+ (5/112)*costheta2^7) &
+    tantheta2 = (link2 * sintheta2)/ (link1 + link2 * costheta2) & 
+    limTheta1 = tantheta2 - tantheta2^3/3 + tantheta2^5/5 - tantheta2^7/7 & */
+    
+    w1^2 =2*B*(limTheta1-theta1) & w1=0  & A>0 & B>0  & x1^2 + y1^2 = link1^2  & theta1 < limTheta1 &
+    w2^2 =2*B*(limTheta2-theta2) & w2=0 & A<B & x2^2 + y2^2 = link2^2 & theta2 < limTheta2
+    )
+  ->
+  [ {
+      {?(2*B*(limTheta1-theta1) = w1^2+(A+B)*(A*T^2+2*T*w1)); a1:=A; ++ ?(limTheta1=theta1); a1 := 0; ++ ?(limTheta1=theta1); a1:=-B; 
+       ?(2*B*(limTheta2-theta2) = w2^2+(A+B)*(A*T^2+2*T*w2)); a2:=A; ++ ?(limTheta2=theta2); a2 := 0; ++ ?(limTheta1=theta1); a2:=-B; }
+        t := 0;
+        {x1' = -y1*w1, y1'= x1*w1, theta1'=w1, x2' = -y2*w2, y2'= x2*w2, theta2'=w2, w2'=a2, t'=1 & t<=T & w1>=0 & w2>=0}
+    }
+    ] (theta1 = limTheta1-> w1 = 0 & theta1 != limTheta1-> w1 != 0 & theta2 = limTheta2-> w2 = 0 & theta2 != limTheta2-> w2 != 0 & x1^2 + y1^2 = link1^2)
+    
+End.
+
+Tactic "Parallel Control: Proof"
+unfold ; <(
+  ODE(1),
+  unfold ; unfold ; ODE(1),
+  ODE(1),
+  ODE(1),
+  ODE(1)
+  )
+End.
+
+End.

@@ -1,0 +1,90 @@
+﻿/* Exported from KeYmaera X v4.9.3 */
+
+Theorem "Z-axis Prismatic Joint Safe Robot"
+
+/**
+ Here, the structure of the robot is such that 
+ */
+
+Functions
+  Real link1, link2;
+  Real T, Tz;
+  Real A, Az;
+  Real B, Bz;
+  Real thetalimit, limTheta2;
+End.
+
+ProgramVariables
+  Real t;
+  Real x, x2;
+  Real y, y2;
+  Real v, v2;
+  Real w, w2;
+  Real a, a2;
+  Real theta, theta2;
+End.
+
+ProgramVariables
+  Real z;
+  Real vz;
+  Real az;
+  Real zlimit;
+End.
+
+
+Problem
+  (
+    /* Requires (initial conditions) */
+    w^2=2*B*(thetalimit-theta) & w=0  & A>0 & B>0 & theta = 0 & x=link1 & y = 0 & 
+    thetalimit > theta & thetalimit < 3.14 & vz = 0 & T > 0 & Tz>0 & vz^2=2*Bz*(- z+ zlimit) &
+    w2^2 =2*B*(limTheta2-theta2) & w2>=0  & A>=0 & B>0  & x2^2 + y2^2 = link2^2 & theta2 < limTheta2
+    )
+  ->
+  [ {
+      {?(2*Bz*(- z+ zlimit) = vz^2+(Az+Bz)*(Az*Tz^2+2*Tz*vz)); az:=Az; ++ az:=-Bz; }
+        t := 0;
+        {z' = vz, vz' = az, t'=1 & t<=T}
+      }*@invariant(vz^2=2*Bz*(- z+ zlimit))
+    
+    {
+      {?(2*B*(thetalimit-theta) = w^2+(A+B)*(A*T^2+2*T*w)); a:=A; ++ a:=-B; }
+        t := 0;
+        {x' = -y*w, y'= x*w, theta'=w, w'=a, t'=1 & w>=0 & t<=T}
+      }*@invariant(w^2=2*B*(thetalimit-theta) & x^2 + y^2 = link1^2)
+      
+    {
+      {?(2*B*(limTheta2-theta2) = w2^2+(A+B)*(A*T^2+2*T*w2)); a2:=A; ++ a2:=-B; }
+        t := 0;
+        {x2' = -y2*w2, y2'= x2*w2, theta2'=w2, w2'=a2, t'=1 & w2>=0 & t<=T}
+      }*@invariant(w2^2=2*B*(limTheta2-theta2) & x2^2 + y2^2 = link2^2)
+      
+    ] (theta = thetalimit -> w = 0& theta != thetalimit -> w != 0 & x^2 + y^2 = link1^2 & z = zlimit -> vz = 0 & z != zlimit -> vz != 0 
+       & theta2 = limTheta2 -> w2 = 0 & theta2 != 0 -> w2 !=0 & x2^2 + y2^2 = link2^2)
+End.
+
+Tactic "Z-axis Prismatic Joint Safe Robot: Proof"
+unfold ; loop("vz^2=2*Bz()*(-z+zlimit)", 1) ; <(
+  QE,
+  unfold ; loop("w^2=2*B()*(thetalimit()-theta)&x^2+y^2=link1()^2", 1) ; <(
+    QE,
+    loop("w2^2=2*B()*(limTheta2()-theta2)&x2^2+y2^2=link2()^2", 1) ; <(
+      QE,
+      QE,
+      unfold ; <(
+        ODE(1),
+        ODE(1)
+        )
+      ),
+    composeb(1) ; choiceb(1) ; unfold ; <(
+      ODE(1),
+      ODE(1)
+      )
+    ),
+  unfold ; <(
+    ODE(1),
+    ODE(1)
+    )
+  )
+End.
+
+End.
